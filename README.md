@@ -53,10 +53,10 @@ Unlike linters and static analyzers that match known patterns, this skill reason
           │      Before/After Fixes · Sprint Roadmap │
           └───────────────┬──────────────────────────┘
                           │
-              ┌───────────┴───────────┐
-              ▼                       ▼
-      📄 Vulnerability           📘 Developer
-         Report PDF           Remediation Guide
+        ┌─────────────────┼─────────────────┐
+        ▼                 ▼                 ▼
+📄 Vulnerability     📘 Developer     📊 Machine-Readable
+   Report PDF      Remediation Guide   CSV · OCSF JSON
 ```
 
 ---
@@ -75,6 +75,13 @@ Dark navy professional layout — not a linter dump. Every finding is structured
 | **Standards** | CWE · OWASP Top 10 · CVE references |
 
 The report follows an industry-standard 8-section structure: Cover & Executive Summary → Scope & Methodology → Risk Dashboard → Threat Model → Detailed Findings → Attack Chain Analysis → Compliance Mapping (OWASP / ISO 27001 / NIST CSF / PCI DSS) → Security Strengths.
+
+### Machine-Readable Exports _(optional)_
+
+Structured output for integration with SIEMs, ticketing systems, and CI/CD pipelines:
+
+- **CSV** — one row per finding with severity, CWE, file, line, and remediation summary; ready for spreadsheet triage or Jira bulk import
+- **OCSF JSON** — findings mapped to the [Open Cybersecurity Schema Framework](https://schema.ocsf.io/) `Vulnerability Finding` class (class UID 2004), compatible with AWS Security Hub, Splunk, and any OCSF-aware SIEM
 
 ### Developer Remediation Guide _(optional)_
 
@@ -168,7 +175,7 @@ cd vuln-assessment/evals/fixtures/vulnapp
 # In Claude Code: "Run a security audit on this codebase"
 ```
 
-Passing bar: `vulnapp_Vulnerability_Report.pdf` + `_vuln_findings.json` with ≥ 20/24 findings detected.
+Passing bar: `vulnapp_Vulnerability_Report.pdf` + `_vuln_findings.json` with ≥ 20/24 findings detected. Optional: `_vuln_findings.csv` and `_vuln_findings_ocsf.json` for machine-readable output validation.
 
 ---
 
