@@ -6,8 +6,8 @@
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8%2B-3776ab.svg)](https://python.org)
-[![Claude Code](https://img.shields.io/badge/Claude%20Code-skill-7c3aed)](https://claude.ai/claude-code)
-[![OWASP](https://img.shields.io/badge/OWASP-Top%2010-e04e39)](https://owasp.org/Top10/)
+[![Claude Code](https://img.shields.io/badge/Claude%20Code-skill-7c3aed)](https://claude.com/product/claude-code)
+[![OWASP](https://img.shields.io/badge/OWASP-Top%2010-e04e39)](https://owasp.org/Top10/2025/)
 
 </div>
 
