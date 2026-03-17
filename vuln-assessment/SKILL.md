@@ -1,5 +1,5 @@
 ---
-name: vuln-assess
+name: vuln-assessment
 description: >
   End-to-end vulnerability assessment pipeline that produces a professional PDF security
   report for any codebase. Use this skill whenever the user wants a security audit,
@@ -65,19 +65,7 @@ independently for each branch (using git worktrees — see Branch Checkout below
 and generate a separate PDF per branch. Name them:
 `<ProjectName>_<BranchName>_Vulnerability_Report.pdf`
 
-### 3. Logo (optional)
-Ask only if you have reason to believe the user has a logo:
-> "Do you have a company/project logo (PNG/JPG) you'd like on the cover? (optional)"
-
-If no answer or "no", skip — the cover looks clean without it.
-
-### 4. Watermark (optional)
-> "Would you like a watermark on the report pages? (e.g. DRAFT, CONFIDENTIAL, INTERNAL — or press Enter to skip)"
-
-If provided, it will appear as a faint diagonal text across every inner page.
-If skipped, no watermark is applied.
-
-### 5. Additional export formats (optional)
+### 3. Additional export formats (optional)
 After asking about the watermark, ask:
 > "Beyond the PDF, would you also like any of these machine-readable exports?
 >
@@ -93,7 +81,7 @@ event per finding, including CVSS vectors, CWE references, affected resource ide
 remediation guidance, and full OCSF envelope metadata — ready for SOC ingestion with no
 post-processing required.
 
-### 6. Developer Remediation Guide (optional)
+### 4. Developer Remediation Guide (optional)
 Ask after question 5:
 > "Would you also like a **Developer Remediation Guide** PDF alongside the security report?
 >
@@ -498,12 +486,10 @@ Run it (replace `<skill_scripts_dir>` with the path from above):
 python <skill_scripts_dir>/generate_report_html.py \
   --findings _vuln_findings.json \
   --output "<ProjectName>_Vulnerability_Report.pdf" \
-  [--watermark "DRAFT"] \
   [--csv "<ProjectName>_Vulnerability_Report.csv"] \
   [--ocsf "<ProjectName>_Vulnerability_Report.ocsf.json"]
 ```
 
-- Include `--watermark` only if the user provided watermark text in Step 0.
 - Include `--csv` only if the user requested CSV export in Step 0.
 - Include `--ocsf` only if the user requested OCSF export in Step 0.
 
