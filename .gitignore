@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+
+# Node
+node_modules/
+npm-debug.log
+
+# Generated artifacts (not for version control)
+evals/**/_vuln_findings.json
+evals/**/_audit_context.md
+evals/**/*.pdf
+evals/**/vulnapp_Vulnerability_Report*
+evals/**/vulnapp_Developer_Remediation*
+
+# OS
+.DS_Store
+Thumbs.db
