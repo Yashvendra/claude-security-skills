@@ -179,6 +179,34 @@ Passing bar: `vulnapp_Vulnerability_Report.pdf` + `_vuln_findings.json` with ≥
 
 ---
 
+## Contributing
+
+Contributions are welcome — bug fixes, new vulnerability categories, additional export formats, or eval fixtures.
+
+1. Fork the repo and create a feature branch
+2. Make your changes and run the evals against `vulnapp` to verify detection rate is not regressed (≥ 20/24)
+3. Open a pull request with a clear description of what changed and why
+
+For larger changes (new pipeline phases, architectural refactors), open an issue first to align on approach before investing time in implementation.
+
+---
+
+## Reporting Issues
+
+Found a bug, a missed vulnerability class, or a false positive pattern? Please open an issue on GitHub:
+
+**[github.com/Yashvendra/claude-security-skills/issues](https://github.com/Yashvendra/claude-security-skills/issues)**
+
+Include:
+- A description of the problem and what you expected
+- The language / framework of the audited codebase (no source code needed)
+- The phase where it failed (e.g., PDF generation, CVE enrichment)
+- Relevant output or error messages
+
+For security vulnerabilities in this skill itself, please disclose privately via GitHub's [private vulnerability reporting](https://github.com/Yashvendra/claude-security-skills/security/advisories/new) rather than opening a public issue.
+
+---
+
 ## License
 
 MIT
