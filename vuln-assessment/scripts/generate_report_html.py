@@ -602,7 +602,8 @@ html, body {
 .index-table thead,
 .fi-table thead,
 .remed-table thead,
-.comp-table thead {
+.comp-table thead,
+.cov-table thead {
   display: table-header-group;
 }
 
@@ -996,7 +997,15 @@ def build_finding_card(f: dict) -> str:
     cls = SEV_CLASS.get(sev, "med")
 
     fid      = e(f.get("id", "VUL-???"))
-    cwe_ref  = e(f.get("references", ""))
+    # Extract first CWE only: "CWE-XXX · <name>" — drop all other references
+    _raw_refs = f.get("references", "")
+    _cwe_m = _re.search(r'CWE-(\d+)(?:\s*[:\-–]\s*([^·\n]+?))?(?:\s*·|$)', _raw_refs)
+    if _cwe_m:
+        _cwe_num  = f"CWE-{_cwe_m.group(1)}"
+        _cwe_name = (_cwe_m.group(2) or "").strip().rstrip("·").strip()
+        cwe_ref   = e(f"{_cwe_num} · {_cwe_name}" if _cwe_name else _cwe_num)
+    else:
+        cwe_ref   = ""
     title    = e(f.get("title", "Untitled Finding"))
     cvss     = e(str(f.get("cvss", "N/A")))
     location = e(f.get("location", "Unknown"))
@@ -1525,10 +1534,14 @@ def build_methodology(data: dict, sec_num: str = "") -> str:
   <div style="padding-top:14mm;margin-top:-10mm">
   <table class="cov-table" style="margin-top:4mm">
     <thead>
+      <tr class="thead-spacer"><td colspan="3" style="padding:0;height:15mm;border:none;background:transparent;"></td></tr>
       <tr><th>Checklist Category</th><th>Status</th><th>Findings</th></tr>
     </thead>
     <tbody>{cov_rows}
     </tbody>
+    <tfoot>
+      <tr><td colspan="3" style="padding:0;height:12mm;border:none;background:transparent;"></td></tr>
+    </tfoot>
   </table>
   </div>"""
 

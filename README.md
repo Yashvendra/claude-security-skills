@@ -1,198 +1,174 @@
+<div align="center">
+
 # claude-skills-security
 
-> AI-powered security audit skills for [Claude Code](https://claude.ai/claude-code) — from raw codebase to professional PDF report in one command.
+**Deep, architecture-aware vulnerability discovery for [Claude Code](https://claude.ai/claude-code) — finds what static scanners miss.**
+
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8%2B-3776ab.svg)](https://python.org)
+[![Claude Code](https://img.shields.io/badge/Claude%20Code-skill-7c3aed)](https://claude.ai/claude-code)
+[![OWASP](https://img.shields.io/badge/OWASP-Top%2010-e04e39)](https://owasp.org/Top10/)
+
+</div>
+
+---
+
+Open any codebase in Claude Code and say:
 
 ```
 "Run a security audit on this codebase"
 ```
 
-That's all it takes. Claude Code runs a full 7-phase pipeline: discovers the architecture, performs ultra-granular function analysis, hunts 22 vulnerability categories, enriches findings with CVE/CWE research, and delivers a pentest-quality PDF report — plus an optional developer remediation guide.
+Unlike linters and static analyzers that match known patterns, this skill reasons about your codebase the way a human auditor would — building a full architectural model, tracing data flows across trust boundaries, and performing ultra-granular function-level analysis to uncover logic flaws, auth bypasses, and novel attack chains that automated tools routinely miss. No configuration. No setup beyond `./install.sh`.
 
 ---
 
-## Skills
+## Pipeline
 
-| Skill | Trigger | Output |
-|---|---|---|
-| **vuln-assessment** | *"security audit"*, *"find vulnerabilities"*, *"pentest this"* | PDF security report + optional developer guide |
+```
+                         📁 Your Codebase
+                               │
+          ┌────────────────────┼────────────────────┐
+          │         7-Phase Audit Pipeline           │
+          │                                          │
+          │  1 ─ Project Discovery                   │
+          │      Language · Framework · Entry Points │
+          │               │                          │
+          │  2 ─ Architecture Context                │
+          │      Module Map · Trust Boundaries       │
+          │               │                          │
+          │  3 ─ Function Analysis                   │
+          │      Top 20 Risky Functions · 5-Whys     │
+          │               │                          │
+          │  4 ─ Vulnerability Hunting               │
+          │      22 Categories · OWASP · CWE · Cloud │
+          │               │                          │
+          │  5 ─ CVE Enrichment          (optional)  │
+          │      CWE · CVEs · NIST SP 800-53         │
+          │               │                          │
+          │  6 ─ PDF Report Generation               │
+          │      Chrome Headless · Dark Navy A4      │
+          │               │                          │
+          │  7 ─ Developer Guide         (optional)  │
+          │      Before/After Fixes · Sprint Roadmap │
+          └───────────────┬──────────────────────────┘
+                          │
+              ┌───────────┴───────────┐
+              ▼                       ▼
+      📄 Vulnerability           📘 Developer
+         Report PDF           Remediation Guide
+```
 
 ---
 
-## What Gets Produced
+## Output
 
 ### Vulnerability Report PDF
-Dark navy professional layout. Every finding has:
-- CVSS 3.1 score + vector string
-- Exact code evidence (line references)
-- Concrete remediation with correct code pattern
-- CWE + OWASP Top 10 mapping + CVE references
 
-**Report sections** (industry-standard structure):
-1. Cover + Executive Summary
-2. Scope, Methodology & Architecture
-3. Risk Dashboard (severity distribution + OWASP category bars)
-4. Threat Model & Attack Surface
-5. Detailed Findings (severity-grouped cards)
-6. Attack Chain Analysis (multi-step exploit paths)
-7. Compliance Mapping (OWASP / CWE / ISO 27001 / NIST CSF / PCI DSS)
-8. Security Strengths (what not to change)
+Dark navy professional layout — not a linter dump. Every finding is structured as:
 
-**Machine-readable exports** (optional):
-- **CSV** — importable into Excel, Jira, or any SIEM
-- **OCSF v1.2.0 JSON** — native ingestion for AWS Security Lake, Splunk, Chronicle, Elastic Security, Microsoft Sentinel
+| Field | Content |
+|---|---|
+| **Severity** | CVSS 3.1 score + vector string |
+| **Evidence** | Exact `file:line` reference with code excerpt |
+| **Remediation** | Concrete fix with the correct code pattern |
+| **Standards** | CWE · OWASP Top 10 · CVE references |
 
-### Developer Remediation Guide PDF (optional)
-Engineer-facing document — not analyst speak. Contains:
-- Root-cause pattern analysis (why so many findings share the same anti-pattern)
+The report follows an industry-standard 8-section structure: Cover & Executive Summary → Scope & Methodology → Risk Dashboard → Threat Model → Detailed Findings → Attack Chain Analysis → Compliance Mapping (OWASP / ISO 27001 / NIST CSF / PCI DSS) → Security Strengths.
+
+### Developer Remediation Guide _(optional)_
+
+Engineer-facing. No analyst jargon — just the information a developer needs to fix things.
+
+- Root-cause pattern analysis across all findings (why the same anti-pattern keeps appearing)
 - Highest-severity attack paths with PoC one-liners
 - File-by-file before/after code fixes with explanations
-- 3-sprint remediation roadmap with hour estimates
-- Concrete test commands to verify each fix
-
----
-
-## The Pipeline
-
-```
-Phase 1 ── Project Discovery
-           Auto-detect language, framework, entry points, data stores, scope
-
-Phase 2 ── Architectural Context Building          [audit-context-building]
-           Module map · data flows · trust boundaries · auth gates · invariants
-
-Phase 3 ── Ultra-Granular Function Analysis        [function-analyzer agent]
-           Top 20 highest-risk functions: block-by-block, 5-Whys, 5-Hows
-
-Phase 4 ── Vulnerability Hunting
-           22-category checklist: OWASP Top 10 · API Security · CWE Top 25 ·
-           JWT/OAuth · Cloud (AWS/GCP/Azure) · Supply Chain · CI/CD · IaC ·
-           Container Security · Attack Chain second pass
-
-Phase 5 ── CVE & Reference Research Enrichment    [research-lookup, optional]
-           CWE numbers · OWASP categories · notable CVEs · NIST SP 800-53
-
-Phase 6 ── PDF Report Generation
-           generate_report_html.py → Chrome headless → professional A4 PDF
-
-Phase 7 ── Developer Remediation Guide             [scientific-writing, optional]
-           Markdown guide → generate_guide_html.py → styled A4 PDF
-```
+- 3-sprint remediation roadmap with hour estimates per finding
 
 ---
 
 ## Installation
 
-### Requirements
-- [Claude Code](https://claude.ai/claude-code) (CLI)
-- Python 3.8+
-- Google Chrome or Chromium (for PDF rendering — no other pip deps)
+**Requirements:** [Claude Code](https://claude.ai/claude-code) · Python 3.8+ · Google Chrome or Chromium
 
-### One-liner
+### Via Claude Code plugin registry _(recommended)_
 
 ```bash
-git clone https://github.com/<your-username>/claude-skills-security.git
+claude plugin install Yashvendra/claude-skills-security
+```
+
+Installs `vuln-assessment` and the bundled `audit-context-building` dependency in one step. For CVE enrichment and the developer guide (Phases 5 + 7), also install:
+
+```bash
+claude plugin install claude-scientific-writer
+```
+
+Restart Claude Code when done.
+
+### Via install script _(alternative)_
+
+```bash
+git clone https://github.com/Yashvendra/claude-skills-security.git
 cd claude-skills-security && ./install.sh
 ```
 
-The installer will:
-1. Copy `vuln-assessment` skill → `~/.claude/skills/`
-2. Install the bundled `audit-context-building` dependency
-3. Optionally install `claude-scientific-writer` (for Phase 5 + Phase 7)
-
-Restart Claude Code after installation.
+`install.sh` copies the skill and its bundled dependencies into `~/.claude/skills/`, then optionally installs `claude-scientific-writer` for CVE research enrichment and the developer guide. Restart Claude Code afterward.
 
 ---
 
 ## Usage
 
-Open any codebase in Claude Code and say any of:
+### Standard audit
 
 ```
 "Run a security audit on this codebase"
-"Check this code for vulnerabilities"
-"Generate a vulnerability assessment report"
-"Find security issues in src/"
-"Pentest this before we ship"
+"Find vulnerabilities in src/"
 "OWASP audit"
+"Pentest this before we ship"
 ```
 
-Claude will ask 2 quick questions (branch + whether you want the developer guide), then run the full pipeline autonomously.
+Claude asks two questions — which branch to audit and whether you want the developer guide — then runs the full pipeline autonomously.
 
-### Multi-branch audits
-```
-"Audit the main and develop branches side by side"
-```
-Produces one PDF per branch, with findings diffed so you can see what new vulnerabilities were introduced.
+### Scoped audit
 
-### Scoped audits
 ```
 "Check only the authentication module for security issues"
 "Find all SQL injection vulnerabilities"
 ```
 
+### Multi-branch comparison
+
+```
+"Audit main and develop side by side"
+```
+
+Produces one PDF per branch with findings diffed to surface vulnerabilities introduced between branches.
+
 ---
 
 ## Dependencies
 
-| Dependency | Bundled | Purpose |
+| Dependency | Distribution | Phases |
 |---|---|---|
-| `audit-context-building` | ✅ Bundled in `deps/` | Phase 2 architecture analysis + Phase 3 function analysis |
-| `claude-scientific-writer` | ➡ Installed via `./install.sh` | Phase 5 CVE research + Phase 7 dev guide (optional) |
-| Chrome / Chromium | System | PDF rendering (Phases 6 + 7) |
-| Python 3.8+ | System | Report generation scripts |
+| `audit-context-building` | Bundled in `deps/` | 2–3: architecture + function analysis |
+| `claude-scientific-writer` | Installed by `./install.sh` | 5 + 7: CVE research + dev guide |
+| Chrome / Chromium | System | 6–7: PDF rendering |
+| Python 3.8+ | System | 6–7: report generation |
 
-Both optional dependencies have graceful fallbacks — the core vulnerability report is produced with or without them.
-
-### Why `audit-context-building` is bundled
-It's a small plugin (5 markdown files) from [Trail of Bits](https://github.com/trailofbits). Bundling it means `./install.sh` is genuinely self-contained. The original source lives at [trailofbits/audit-context-building](https://github.com/trailofbits).
-
-### Why `claude-scientific-writer` is not bundled
-It's a large plugin (30+ sub-skills, ~30MB). The install script fetches it via the Claude Code plugin registry with a single command.
-
----
-
-## Project Structure
-
-```
-claude-skills-security/
-├── vuln-assessment/
-│   ├── SKILL.md                    ← skill definition (loaded by Claude Code)
-│   ├── scripts/
-│   │   ├── generate_report_html.py ← HTML→PDF report generator (no pip deps)
-│   │   └── generate_guide_html.py  ← HTML→PDF dev guide generator
-│   ├── references/
-│   │   ├── vuln_checklist.md       ← 22-category vulnerability checklist
-│   │   └── cvss_guide.md           ← CVSS 3.1 quick reference
-│   ├── assets/                     ← fonts, manifest
-│   └── evals/                      ← evaluation fixtures (vulnapp)
-├── deps/
-│   └── audit-context-building/     ← bundled Trail of Bits plugin
-├── install.sh                      ← one-command setup
-└── README.md
-```
+Both optional dependencies degrade gracefully — skip them and the core vulnerability report is still produced in full.
 
 ---
 
 ## Evals
 
-The `vuln-assessment/evals/` directory contains a deliberately vulnerable Flask application (`vulnapp`) with 24 known findings across 5 critical, 13 high, 5 medium, and 1 low severity. Use it to validate the skill's detection rate:
+`vuln-assessment/evals/fixtures/vulnapp` is a deliberately vulnerable Flask application with **24 known findings** (5 Critical · 13 High · 5 Medium · 1 Low). Use it to validate detection rate:
 
 ```bash
-# Run eval against the fixture codebase
 cd vuln-assessment/evals/fixtures/vulnapp
-# Then in Claude Code: "Run a security audit on this codebase"
+# In Claude Code: "Run a security audit on this codebase"
 ```
 
-Expected output: `vulnapp_Vulnerability_Report.pdf` + `_vuln_findings.json` with ≥20/24 findings.
-
----
-
-## Output Examples
-
-The `evals/fixtures/vulnapp/` directory contains real output from the skill:
-- `vulnapp_Vulnerability_Report.pdf` — the full security report
-- `vulnapp_Developer_Remediation_Guide.pdf` — the developer guide
-- `_vuln_findings.json` — all 24 findings in structured JSON
+Passing bar: `vulnapp_Vulnerability_Report.pdf` + `_vuln_findings.json` with ≥ 20/24 findings detected.
 
 ---
 

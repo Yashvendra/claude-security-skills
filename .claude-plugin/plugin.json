@@ -1,0 +1,17 @@
+{
+  "name": "claude-skills-security",
+  "version": "1.0.0",
+  "description": "Deep, architecture-aware vulnerability discovery for Claude Code — finds what static scanners miss",
+  "author": {
+    "name": "Yashvendra",
+    "url": "https://github.com/Yashvendra"
+  },
+  "homepage": "https://github.com/Yashvendra/claude-skills-security",
+  "repository": "https://github.com/Yashvendra/claude-skills-security",
+  "license": "MIT",
+  "keywords": ["security", "vulnerability", "owasp", "pentest", "cwe", "audit", "sast"],
+  "skills": [
+    "./",
+    "./deps/audit-context-building/skills/"
+  ]
+}
