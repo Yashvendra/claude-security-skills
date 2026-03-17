@@ -98,7 +98,7 @@ Engineer-facing. No analyst jargon — just the information a developer needs to
 
 **Requirements:** [Claude Code](https://claude.ai/claude-code) · Python 3.8+ · Google Chrome or Chromium
 
-### Via Claude Code plugin registry _(recommended)_
+### Via Claude Code plugin registry _(pending marketplace review)_
 
 ```bash
 claude plugin install Yashvendra/claude-security-skills
