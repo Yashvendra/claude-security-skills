@@ -1,6 +1,6 @@
 <div align="center">
 
-# claude-skills-security
+# claude-security-skills
 
 **Deep, architecture-aware vulnerability discovery skills for [Claude Code](https://claude.ai/claude-code) — finds what static scanners miss.**
 
