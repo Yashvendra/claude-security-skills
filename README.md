@@ -2,7 +2,7 @@
 
 # claude-skills-security
 
-**Deep, architecture-aware vulnerability discovery for [Claude Code](https://claude.ai/claude-code) — finds what static scanners miss.**
+**Deep, architecture-aware vulnerability discovery skills for [Claude Code](https://claude.ai/claude-code) — finds what static scanners miss.**
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8%2B-3776ab.svg)](https://python.org)
@@ -101,7 +101,7 @@ Engineer-facing. No analyst jargon — just the information a developer needs to
 ### Via Claude Code plugin registry _(recommended)_
 
 ```bash
-claude plugin install Yashvendra/claude-skills-security
+claude plugin install Yashvendra/claude-security-skills
 ```
 
 Installs `vuln-assessment` and the bundled `audit-context-building` dependency in one step. For CVE enrichment and the developer guide (Phases 5 + 7), also install:
@@ -115,7 +115,7 @@ Restart Claude Code when done.
 ### Via install script _(alternative)_
 
 ```bash
-git clone https://github.com/Yashvendra/claude-skills-security.git
+git clone https://github.com/Yashvendra/claude-security-skills.git
 cd claude-skills-security && ./install.sh
 ```
 
