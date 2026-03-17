@@ -1,0 +1,140 @@
+{
+  "skill_name": "vuln-assess",
+  "fixture_root": "evals/fixtures/vulnapp",
+  "fixture_note": "A deliberately vulnerable Flask app committed as a git repo with 'master' and 'develop' branches. Known vulnerabilities are annotated with '# VUL:' comments in the source. Evals reference absolute paths resolved at test time from the skill's install directory.",
+  "known_vulnerabilities": {
+    "CRITICAL": [
+      "SQL injection in login() — username/password interpolated into query (app.py:28)",
+      "SQL injection in get_user() — user_id in URL interpolated into query (app.py:72)",
+      "SQL injection in forgot_password() — email interpolated into UPDATE query (app.py:99)",
+      "SQL injection in raw_query() — filter values and table name interpolated (db.py:20)",
+      "Command injection in run_report() — shell=True with user-controlled input (app.py:56)"
+    ],
+    "HIGH": [
+      "Path traversal in download_file() — filename from query param joins base_dir without sanitization (app.py:44)",
+      "Hardcoded AWS credentials in settings.py (settings.py:8-9)",
+      "Hardcoded JWT secret in settings.py (settings.py:12)",
+      "Missing authorization on /admin/users — no role check (app.py:79)",
+      "Debug config endpoint exposes full os.environ without auth (app.py:109)"
+    ],
+    "MEDIUM": [
+      "IDOR on /user/<user_id> — any authenticated user can view any other user (app.py:64)",
+      "Hardcoded internal IP / plaintext HTTP in call_internal_service() (app.py:103)",
+      "Credentials logged in login() — query string with password written to DEBUG log (app.py:29)",
+      "Reset token logged in forgot_password() (app.py:100)",
+      "Wildcard CORS in settings.py (settings.py:21)"
+    ],
+    "LOW": [
+      "MD5 used for password hashing in register() (app.py:39)",
+      "random.randint used for security token in generate_reset_token() (app.py:87)",
+      "DB connections never pooled in db.py — new sqlite3.connect() per bulk_insert() call",
+      "debug=True in app.run() (app.py:115)",
+      "Outdated dependencies with known CVEs: Flask 2.0.1, Werkzeug 2.0.1, PyYAML 5.3.1, cryptography 2.9.2"
+    ]
+  },
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Run a full vulnerability assessment on the Flask app at evals/fixtures/vulnapp (relative to the skill directory) and generate a PDF report. It's a git repo — audit the 'master' branch.",
+      "expected_output": "A PDF report identifying at least 8 of the 18 known vulnerabilities across CRITICAL/HIGH/MEDIUM/LOW tiers. Each finding must have a specific file:line location, a real code snippet as evidence, and a CVSS score consistent with its severity label.",
+      "files": [],
+      "assertions": [
+        "At least one CRITICAL SQL injection finding is identified",
+        "The command injection in run_report() is identified",
+        "The path traversal in download_file() is identified",
+        "At least one hardcoded credential finding is identified (AWS key or JWT secret)",
+        "The missing authorization on /admin/users is identified",
+        "Each finding includes a file:line location reference",
+        "Each finding includes an actual code snippet from the fixture codebase",
+        "Each finding has a CVSS score present",
+        "CRITICAL findings have CVSS >= 9.0",
+        "HIGH findings have CVSS between 7.0 and 8.9",
+        "A PDF file named *_Vulnerability_Report.pdf is created",
+        "The executive summary correctly states the total finding count",
+        "The branch 'master' appears in the report metadata",
+        "Phase 5 CVE research runs for at least one CRITICAL or HIGH finding",
+        "Audit context is saved to memory after the assessment completes",
+        "No personal names or project-specific paths appear in the generated PDF"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Security audit the Flask app at evals/fixtures/vulnapp across two branches: 'master' and 'develop'. Give me a separate report for each branch.",
+      "expected_output": "Two separate PDFs — one for master, one for develop — each running the full 6-phase pipeline independently. The skill uses git worktrees to avoid disturbing the working tree. Both reports should identify the same core vulnerabilities since develop only adds a comment line.",
+      "files": [],
+      "assertions": [
+        "The skill correctly detects the target as a git repository",
+        "Two separate PDF files are generated (one per branch)",
+        "Each PDF filename includes the branch name",
+        "Git worktrees are used for the non-current branch (not destructive checkout)",
+        "Worktrees are cleaned up after each branch analysis completes",
+        "Both reports independently identify the SQL injection vulnerability",
+        "The branch name in each report's cover page matches the file it was generated for",
+        "The skill does not mix findings between the two branch reports"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Is the Flask app at evals/fixtures/vulnapp secure? Give me a report I can share with the team.",
+      "expected_output": "The skill triggers on the casual 'is this secure?' phrasing, runs the full pipeline on the current branch (master), and produces a professional PDF with findings grouped by severity, CVSS scores, real code evidence, and a prioritized remediation roadmap.",
+      "files": [],
+      "assertions": [
+        "The skill triggers on casual 'is this secure?' phrasing without explicit /vuln-assess invocation",
+        "The skill asks about git branch selection (or defaults to current branch)",
+        "All 6 phases complete: discovery, context, function analysis, hunting, research, PDF generation",
+        "The PDF contains a cover page, executive summary, scope section, findings section, and remediation roadmap",
+        "At least 5 distinct findings are identified across at least 2 severity tiers",
+        "The MD5 password hashing weakness is identified",
+        "The random.randint token generation weakness is identified",
+        "Remediation guidance is specific — not just 'fix the vulnerability'",
+        "No personal identifying information appears in the output"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Audit just the authentication code in evals/fixtures/vulnapp/src/app.py — focus on the login, register, and forgot-password endpoints.",
+      "expected_output": "A focused assessment covering only the specified file, identifying the SQL injection in login(), MD5 hashing in register(), weak random token generation in forgot_password(), and the password being logged at DEBUG level.",
+      "files": [],
+      "assertions": [
+        "The scope is correctly narrowed to the specified file rather than the full codebase",
+        "SQL injection in login() is identified with line number",
+        "MD5 usage in register() is identified",
+        "random.randint usage for security token is identified",
+        "The password logging in login() is identified",
+        "A PDF is generated covering only the scoped findings",
+        "The CVSS scores for the SQL injection findings are >= 8.0"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Check only for XSS vulnerabilities in the Flask app at evals/fixtures/vulnapp. I don't need a full audit — just XSS. Give me a PDF with whatever you find.",
+      "expected_output": "A focused, vulnerability-class-scoped assessment that only searches for XSS-class vulnerabilities (checklist sections L and V). The skill acknowledges the narrowed scope in both the scope summary and the PDF executive summary. It still uses Phase 3 function analysis to find relevant sinks, produces findings for any XSS-related issues found (e.g. unescaped output, debug stack traces rendered to clients), and generates a PDF noting the partial scope. If no XSS is found, it states that clearly.",
+      "files": [],
+      "assertions": [
+        "The skill recognises the 'XSS only' scope request and restricts Phase 4 to sections L and V of the checklist",
+        "The scope restriction is explicitly stated in the PDF executive summary or scope section",
+        "Phase 3 function analysis is still performed on relevant output-rendering functions",
+        "A PDF is generated even for a narrowed vulnerability-class audit",
+        "The skill does not hallucinate XSS findings — any finding must include an actual code snippet as evidence",
+        "If XSS findings are present, each includes a file:line location",
+        "CVSS vector strings are included alongside CVSS scores for any findings",
+        "The audit context saved to memory notes that this was a partial (XSS-only) audit"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "The full assessment is already done — there's a _vuln_findings.json in evals/fixtures/vulnapp. Just regenerate the PDF report from it. Call it vulnapp_regen.pdf.",
+      "expected_output": "The skill recognises this as a Phase 6 standalone request (report regeneration from existing JSON), skips Phases 1–5, locates generate_report.py, runs it against the specified JSON, and produces vulnapp_regen.pdf. It does not re-run the vulnerability hunt.",
+      "files": [],
+      "assertions": [
+        "The skill correctly identifies this as a standalone PDF regeneration request (no re-audit needed)",
+        "Phases 1–5 are skipped — no codebase scanning occurs",
+        "The skill locates generate_report.py using find ~/.claude/skills or equivalent",
+        "The output PDF is named vulnapp_regen.pdf as specified",
+        "The PDF contains the same findings as the source _vuln_findings.json",
+        "The skill confirms the output path to the user",
+        "The skill does not error if cvss_vector fields are absent from the JSON (backward compatible)"
+      ]
+    }
+  ]
+}
