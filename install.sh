@@ -42,17 +42,22 @@ echo "    • Phase 7 — Developer Remediation Guide generation (scientific-wri
 echo ""
 echo "  Without it, both phases fall back to built-in knowledge / pandoc."
 echo ""
-read -r -p "  Install claude-scientific-writer now? [y/N] " install_sci
-if [[ "${install_sci,,}" == "y" ]]; then
-  if command -v claude &>/dev/null; then
-    claude plugin install claude-scientific-writer 2>/dev/null && \
-      info "Installed claude-scientific-writer via Claude Code" || \
-      warn "Could not auto-install — run: claude plugin install claude-scientific-writer"
-  else
-    warn "claude CLI not found — install manually: claude plugin install claude-scientific-writer"
-  fi
+CSW_DIR="$CLAUDE_DIR/plugins/marketplaces/claude-scientific-writer"
+if [ -d "$CSW_DIR" ]; then
+  info "claude-scientific-writer already installed — skipping"
 else
-  info "Skipped claude-scientific-writer (you can install it later)"
+  read -r -p "  Install claude-scientific-writer now? [y/N] " install_sci
+  if [[ "${install_sci,,}" == "y" ]]; then
+    if command -v claude &>/dev/null; then
+      claude plugin install claude-scientific-writer 2>/dev/null && \
+        info "Installed claude-scientific-writer via Claude Code" || \
+        warn "Could not auto-install — run: claude plugin install claude-scientific-writer"
+    else
+      warn "claude CLI not found — install manually: claude plugin install claude-scientific-writer"
+    fi
+  else
+    info "Skipped claude-scientific-writer (you can install it later)"
+  fi
 fi
 
 # ── 4. System dependencies ────────────────────────────────────────────────────

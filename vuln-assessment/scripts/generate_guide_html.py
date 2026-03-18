@@ -71,10 +71,8 @@ SEVERITY_ORDER = ["CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO"]
 CSS = """\
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-/* @page margin: 0 — position:fixed top:0/bottom:0 maps to physical page edges in Chrome.
-   Sections compensate with padding-top/bottom to clear the fixed header/footer. */
-@page          { size: A4; margin: 0; }
-@page :first   { margin: 0; }
+/* Header/footer repeat via <thead>/<tfoot> — no @page margins needed. */
+@page { size: A4; margin: 0; }
 
 html, body {
   width: 210mm;
@@ -101,15 +99,13 @@ html, body {
   --pad:      16mm;
 }
 
-/* ── Fixed header ─────────────────────────────────────────────────────── */
+/* ── Header (repeats via <thead> on every page) ────────────────────────── */
 .fixed-header {
-  position: fixed;
-  top: 0; left: 0; right: 0;
+  width: 210mm;
   height: 11mm;
   background: var(--navy);
   display: flex;
   align-items: stretch;
-  z-index: 10;
 }
 .fh-accent { width: 4mm; background: var(--blue); flex-shrink: 0; }
 .fh-content {
@@ -132,22 +128,18 @@ html, body {
   letter-spacing: 0.10em;
 }
 
-/* ── Fixed footer ─────────────────────────────────────────────────────── */
-/* With @page margin:0, bottom:0 maps to the physical page bottom in Chrome. */
-.fixed-footer {
-  position: fixed;
-  bottom: 0; left: 0; right: 0;
-  height: 9mm;
-  border-top: 0.5px solid #DDDDDD;
-  background: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 7mm;
-  z-index: 10;
+/* ── Page layout table ──────────────────────────────────────────────────── */
+/* Chrome repeats <thead> on every printed page automatically.
+   Cover is outside the table (no header on cover page). */
+.page-layout {
+  width: 210mm;
+  border-collapse: collapse;
+  table-layout: fixed;
 }
-.ff-left  { font-size: 5.5pt; color: #888888; letter-spacing: 0.08em; }
-.ff-right { font-size: 5.5pt; color: #888888; font-family: 'Courier New', monospace; }
+.thead-td { padding: 0; height: 11mm; border: none; }
+/* border: none prevents the generic td border-bottom from overflowing onto the
+   next page as a 0.5px phantom element that generates a spurious blank page. */
+.tbody-td { padding: 0; vertical-align: top; border: none; }
 
 /* ── Cover ────────────────────────────────────────────────────────────── */
 .cover {
@@ -263,8 +255,7 @@ html, body {
 
 /* ── TOC page ─────────────────────────────────────────────────────────── */
 .toc-page {
-  padding: 15mm var(--pad) 13mm; /* top: clear 11mm header + 4mm; bottom: clear 9mm footer + 4mm */
-  min-height: 297mm;
+  padding: 6mm var(--pad) 6mm;
   break-after: page;
 }
 .toc-title {
@@ -300,16 +291,14 @@ html, body {
 }
 
 /* ── Content sections ─────────────────────────────────────────────────── */
-/* padding-top = 11mm header + 14mm breathing room; padding-bottom = 9mm footer + 3mm */
+/* Header/footer clearance handled by thead/tfoot — padding is breathing room only. */
+/* Sections flow inside their own <tr> — page breaks are applied at the row level
+   via inline style, not on the div. Chrome handles table-row breaks correctly. */
 .section {
-  padding: 25mm var(--pad) 12mm;
+  padding: 6mm var(--pad) 6mm;
 }
-/* Page break inserted as a sibling before each section (except first) */
-.page-break {
-  break-before: page;
-  height: 0;
-  margin: 0;
-  padding: 0;
+.section table {
+  max-width: 100%;
 }
 
 /* ── Headings ─────────────────────────────────────────────────────────── */
@@ -547,11 +536,21 @@ def parse_markdown(md: str) -> tuple[str, str, list[Section]]:
 
     in_olist = False
 
+    para_buf: list[str] = []
+
     got_title = False
     i = 0
 
+    def flush_para():
+        nonlocal para_buf
+        if not para_buf:
+            return
+        emit(f'<p>{inline_fmt(" ".join(para_buf))}</p>')
+        para_buf = []
+
     def flush_list():
         nonlocal in_list, list_buf, list_ordered
+        flush_para()
         if not in_list:
             return
         tag = "ol" if list_ordered else "ul"
@@ -562,6 +561,7 @@ def parse_markdown(md: str) -> tuple[str, str, list[Section]]:
 
     def flush_table():
         nonlocal in_table, table_rows, table_header_done
+        flush_para()
         if not in_table:
             return
         html_parts_local = ["<table>"]
@@ -585,6 +585,7 @@ def parse_markdown(md: str) -> tuple[str, str, list[Section]]:
 
     def flush_callout():
         nonlocal in_callout, callout_buf
+        flush_para()
         if not in_callout:
             return
         inner = "\n".join(callout_buf)
@@ -660,6 +661,7 @@ def parse_markdown(md: str) -> tuple[str, str, list[Section]]:
 
         # ── H3 ──
         if re.match(r'^### ', line):
+            flush_para()
             flush_list()
             flush_table()
             title = line[4:].strip()
@@ -672,6 +674,7 @@ def parse_markdown(md: str) -> tuple[str, str, list[Section]]:
 
         # ── H4 ──
         if re.match(r'^#### ', line):
+            flush_para()
             flush_list()
             flush_table()
             title = line[5:].strip()
@@ -681,6 +684,7 @@ def parse_markdown(md: str) -> tuple[str, str, list[Section]]:
 
         # ── Blank line ──
         if not line.strip():
+            flush_para()
             flush_list()
             flush_table()
             # blank line after a callout-level H2 signals end of callout opening header
@@ -717,6 +721,7 @@ def parse_markdown(md: str) -> tuple[str, str, list[Section]]:
 
         # ── Horizontal rule ──
         if re.match(r'^---+$', line.strip()):
+            flush_para()
             flush_callout()
             emit('<hr style="border:none;border-top:1px solid #DDDDDD;margin:4mm 0;">')
             i += 1
@@ -724,10 +729,11 @@ def parse_markdown(md: str) -> tuple[str, str, list[Section]]:
 
         # ── Plain paragraph ──
         if line.strip() and cur is not None:
-            emit(f'<p>{inline_fmt(line.strip())}</p>')
+            para_buf.append(line.strip())
 
         i += 1
 
+    flush_para()
     flush_list()
     flush_table()
     flush_callout()
@@ -872,8 +878,7 @@ def build_appendix(findings: list[dict]) -> str:
   <div class="finding-body">{details}</div>
 </div>
 """
-    return f"""<div class="page-break"></div>
-<div class="section" id="appendix-findings">
+    return f"""<div class="section section-break" id="appendix-findings">
   <h2>Appendix — Full Findings Inventory</h2>
   {cards}
 </div>
@@ -899,17 +904,35 @@ def build_html(
     cover   = build_cover(doc_title, meta, counts)
     toc     = build_toc(sections)
 
-    section_html = ""
+    # Each section gets its own <tr> so page-break-before fires at the row level.
+    # Chrome handles forced breaks on table rows correctly — it won't double-break
+    # when a natural page boundary coincides with the forced break, unlike divs.
+    toc_row = f"""    <tr>
+      <td class="tbody-td">{toc}</td>
+    </tr>"""
+
+    section_rows = ""
     for idx, sec in enumerate(sections):
         inner = "\n".join(sec.html_parts)
-        brk = '<div class="page-break"></div>\n' if idx > 0 else ""
-        section_html += f"""{brk}<div class="section" id="{sec.anchor}">
-  <h2>{html.escape(sec.title)}</h2>
-  {inner}
-</div>
+        # Section 1 (idx=0) follows the TOC which has break-after:page — no extra break needed.
+        # Sections 2+ force a new page at the table-row level.
+        brk = ' style="page-break-before: always"' if idx > 0 else ""
+        section_rows += f"""    <tr{brk}>
+      <td class="tbody-td">
+        <div class="section" id="{sec.anchor}">
+          <h2>{html.escape(sec.title)}</h2>
+          {inner}
+        </div>
+      </td>
+    </tr>
 """
 
-    appendix = build_appendix(findings)
+    appendix_html = build_appendix(findings)
+    appendix_row = ""
+    if appendix_html:
+        appendix_row = f"""    <tr style="page-break-before: always">
+      <td class="tbody-td">{appendix_html}</td>
+    </tr>"""
 
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -922,25 +945,29 @@ def build_html(
 </head>
 <body>
 
-<!-- Fixed header (hidden on cover by z-index) -->
-<div class="fixed-header">
-  <div class="fh-accent"></div>
-  <div class="fh-content">
-    <span class="fh-left">Developer Remediation Guide — {html.escape(project)}</span>
-    <span class="fh-right">CONFIDENTIAL</span>
-  </div>
-</div>
-
-<!-- Fixed footer -->
-<div class="fixed-footer">
-  <span class="ff-left">INTERNAL USE ONLY · {html.escape(date)}</span>
-  <span class="ff-right">Generated by vuln-assess skill</span>
-</div>
-
+<!-- Cover is outside the table so header/footer don't appear on the cover page -->
 {cover}
-{toc}
-{section_html}
-{appendix}
+
+<!-- Each section is its own <tr> so page-break-before fires at row level,
+     avoiding Chrome's double-break bug that occurs on block-level divs. -->
+<table class="page-layout">
+  <thead>
+    <tr><td class="thead-td">
+      <div class="fixed-header">
+        <div class="fh-accent"></div>
+        <div class="fh-content">
+          <span class="fh-left">Developer Remediation Guide — {html.escape(project)}</span>
+          <span class="fh-right">CONFIDENTIAL</span>
+        </div>
+      </div>
+    </td></tr>
+  </thead>
+  <tbody>
+{toc_row}
+{section_rows}
+{appendix_row}
+  </tbody>
+</table>
 
 </body>
 </html>

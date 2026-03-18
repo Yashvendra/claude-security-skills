@@ -594,7 +594,7 @@ Structure:
   7. What Not to Change
      (security_strengths from _vuln_findings.json — what to preserve)
   Appendix A: Complete Finding Reference Index
-     (table: ID · Severity · Title · File:Line · Sprint · CVSS)
+     (table: ID · Severity · CVSS · Title · File:Line)
 ```
 
 ### Step 2 — Convert Markdown to PDF
