@@ -8,12 +8,19 @@ __pycache__/
 node_modules/
 npm-debug.log
 
-# Generated artifacts (not for version control)
-evals/**/_vuln_findings.json
+# Generated audit artifacts — ignored for all evals fixtures
 evals/**/_audit_context.md
+evals/**/*.docx
+evals/**/*.csv
+evals/**/*_ocsf.json
+evals/**/generate_guide_docx.js
+evals/**/package.json
+evals/**/package-lock.json
+
+# PDF reports and findings — ignored for all eval fixtures
 evals/**/*.pdf
-evals/**/vulnapp_Vulnerability_Report*
-evals/**/vulnapp_Developer_Remediation*
+evals/**/_vuln_findings.json
+evals/**/*_Developer_Remediation_Guide.md
 
 # OS
 .DS_Store
