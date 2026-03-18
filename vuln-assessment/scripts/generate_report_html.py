@@ -374,7 +374,7 @@ html, body {
 .stat-label { font-family: var(--mono); font-size: 8pt; letter-spacing: 0.15em; text-transform: uppercase; color: var(--ink); font-weight: 600; }
 .dist-label { font-family: var(--mono); font-size: 8pt; letter-spacing: 0.15em; color: var(--ink); text-transform: uppercase; margin-bottom: 2.5mm; font-weight: 600; }
 .dist-bar   { display: flex; height: 8mm; border-radius: 3px; overflow: hidden; margin-bottom: 2mm; }
-.dist-seg   { display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 7pt; font-weight: 700; color: rgba(255,255,255,0.95); }
+.dist-seg   { display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 7pt; font-weight: 700; color: rgba(255,255,255,0.95); min-width: 18mm; }
 .dist-seg.crit { background: var(--crit); }
 .dist-seg.high { background: var(--high); }
 .dist-seg.med  { background: var(--med); color: rgba(0,0,0,0.7); }
