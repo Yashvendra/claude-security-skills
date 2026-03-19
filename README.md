@@ -2,7 +2,7 @@
 
 # claude-security-skills
 
-**Deep, architecture-aware vulnerability discovery skills for [Claude Code](https://claude.ai/claude-code) — finds what static scanners miss.**
+**[Claude Code](https://claude.ai/claude-code) skill for adversarial-grade security audits: full architectural context, ultra-granular function analysis, and novel code vulnerabilities discovery**
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8%2B-3776ab.svg)](https://python.org)
