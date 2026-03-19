@@ -93,6 +93,70 @@ The skill found **24 findings** in vulnapp: **5 Critical · 13 High · 5 Medium 
 
 ---
 
+## How the skill thinks
+
+Unlike a linter that flags lines in isolation, the skill traces data across function boundaries and reasons about how vulnerabilities chain into real-world impact.
+
+### Taint flow — from HTTP input to SQL sink
+
+```mermaid
+flowchart TD
+    A["🌐 HTTP POST /login\nrequest.json — username, password"]
+    A -->|untrusted input, no validation| B
+
+    B["login&#40;&#41; — src/app.py:31\nno sanitization, no type checks"]
+    B -->|string passed directly into query builder| C
+
+    C["f-string interpolation\nSELECT * FROM users WHERE username = '{username}'\nno parameterization, no escaping"]
+    C -->|raw string handed to DB driver| D
+
+    D["cursor.execute&#40;query&#41;\nSQL sink — untrusted data reaches the DB"]
+    D -->|query executed verbatim| E
+
+    E["💀 EXPLOITED\n' OR '1'='1  →  authentication bypass\n' UNION SELECT * FROM users--  →  full DB dump\n'; DROP TABLE users--  →  data destruction"]
+
+    style A fill:#1e3a5f,color:#fff,stroke:#3b82f6
+    style B fill:#92400e,color:#fff,stroke:#f59e0b
+    style C fill:#7f1d1d,color:#fff,stroke:#ef4444
+    style D fill:#991b1b,color:#fff,stroke:#ef4444
+    style E fill:#450a0a,color:#ff6b6b,stroke:#dc2626
+```
+
+### Attack chain analysis — how individual findings compound
+
+```mermaid
+flowchart TD
+    subgraph ChainA["⛓️ Chain A — Auth Bypass to Full Data Breach"]
+        direction TD
+        A1["🔴 VUL-001 CRITICAL — SQL Injection\n/login · src/app.py:35"]
+        A1 --> A2["Extract all password hashes\nfull users table via UNION SELECT"]
+        A2 --> A3["🔴 VUL-003 HIGH — MD5 password hashing\nentire table cracked in minutes via rainbow tables"]
+        A3 --> A4["Account takeover — any user including admins"]
+        A4 --> A5["🔴 VUL-006 HIGH — IDOR\n/user/{id} · no ownership assertion"]
+        A5 --> A6["💀 Full data breach\nPII · credentials · financial data across all accounts"]
+    end
+
+    subgraph ChainB["⛓️ Chain B — Three Paths to Cloud Takeover"]
+        direction TD
+        B1["🔴 VUL-004 CRITICAL — Hardcoded AWS Key\nconfig/settings.py:8"]
+        B2["🔴 VUL-009 HIGH — SSRF\n/fetch · 169.254.169.254 reachable"]
+        B3["🔴 VUL-011 HIGH — Unauthenticated /debug/config\nexposes all secrets in plaintext"]
+        B1 & B2 & B3 --> B4["AWS credentials obtained by attacker"]
+        B4 --> B5["💀 Full cloud account takeover\nS3 exfiltration · EC2 RCE · IAM escalation · RDS dump"]
+    end
+
+    style A1 fill:#7f1d1d,color:#fff,stroke:#dc2626
+    style A3 fill:#7f1d1d,color:#fff,stroke:#dc2626
+    style A5 fill:#7f1d1d,color:#fff,stroke:#dc2626
+    style A6 fill:#450a0a,color:#ff6b6b,stroke:#dc2626
+    style B1 fill:#7f1d1d,color:#fff,stroke:#dc2626
+    style B2 fill:#7f1d1d,color:#fff,stroke:#dc2626
+    style B3 fill:#7f1d1d,color:#fff,stroke:#dc2626
+    style B5 fill:#450a0a,color:#ff6b6b,stroke:#dc2626
+```
+
+---
+
 ## Sample reports
 
 - [vulnapp Vulnerability Report PDF](docs/screenshots/vulnapp_Vulnerability_Report.pdf)
